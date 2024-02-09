@@ -1,21 +1,24 @@
+import pause
 import asyncio
 import array
+from datetime import datetime
 from bleak import BleakScanner
 from bleak import BleakClient
 
-# These are Espruino-specific (see bleak example https://www.espruino.com/Interfacing): 
+#address = "d1:41:7d:99:0b:ca"
 UUID_NORDIC_TX = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
 UUID_NORDIC_RX = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
-day = 1
+day = 0
 command = b"\x03\x10prnt("+str.encode(str(day))+b")\n"
 
 out = ""
 
+# handle collected data sent back over BLE 
 def uart_data_received(sender, data):
     global out
     out = out + (str(data.decode()))
 
-# You can scan for devices with:
+# scan for Puck devices and ask for data
 async def runa():
     devices = await BleakScanner.discover()
     for d in devices:
@@ -40,5 +43,13 @@ async def runa():
                       out = out[:chIndex]
                  print(out)
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(runa())
+current_dateTime = datetime.now()
+
+while True:
+    pause.until(datetime(current_dateTime.year, current_dateTime.month,
+                         current_dateTime.day, 23, 55))
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(runa())
+    pause.until(datetime(current_dateTime.year, current_dateTime.month,
+                         current_dateTime.day+1, 0, 2))
+    current_dateTime = datetime.now()
