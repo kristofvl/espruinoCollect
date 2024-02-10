@@ -4,6 +4,7 @@ from bleak import BleakScanner
 from bleak import BleakClient
 from datetime import datetime
 import matplotlib.pyplot as plt
+import csv
 
 UUID_NORDIC_TX = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
 UUID_NORDIC_RX = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
@@ -34,9 +35,19 @@ async def runa(day):
                      await client.write_gatt_char(UUID_NORDIC_TX, bytearray(c[0:20]), True)
                      c = c[20:]
                  await asyncio.sleep(3.0) # wait for a response within 3 seconds
-                 parseOut()
-        else:
-            print("No Puck found")
+                 ts, temp, lght, date = parseOut()
+                 # write to CSV:
+                 with open('log.csv', 'a', encoding='UTF8') as f:
+                     writer = csv.writer(f)
+                     # write a row to the csv file
+                     for i in range(0,len(ts)):
+                         writer.writerow([date, ts[i], temp[i], lght[i]])
+                 # plot:
+                 plt.plot(ts, temp)
+                 plt.gca().set_xticks(ts[::8])
+                 plt.gca().tick_params(axis='x', labelrotation=90)
+                 plt.title(date)
+                 plt.show()
 
 # convert buffer to floats containing the sensor data
 def outStr2Floats():
@@ -71,21 +82,16 @@ def parseOut():
     ts = [x/100.0 for x in range(0, 24*100, 25)]
     for i in range(0,len(temp)):
         ts[i] = "{:2.2f}".format(ts[i]).zfill(5).replace(".",":")
-    # plot:
-    plt.plot(ts, temp)
-    plt.gca().set_xticks(ts[::8])
-    #plt.gca().set_xticklabels(ts)
-    plt.gca().tick_params(axis='x', labelrotation=90)
-    plt.title(date)
-    plt.show()
+        ts[i] = ts[i].replace("25","15").replace("50","30").replace("75","45")
+    return ts, temp, lght, date
 
 # get current day and time:
 current_dateTime = datetime.now()
 
 # main loop that wakes up at defined time and collects the data
 while True:
-    pause.until(datetime(current_dateTime.year, current_dateTime.month,
-                         current_dateTime.day, 23, 58))
+    #pause.until(datetime(current_dateTime.year, current_dateTime.month,
+    #                     current_dateTime.day, 23, 58))
     loop = asyncio.get_event_loop()
     loop.run_until_complete(runa(0))
     pause.until(datetime(current_dateTime.year, current_dateTime.month,
