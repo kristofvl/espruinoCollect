@@ -42,13 +42,7 @@ async def runa(day):
                      # write a row to the csv file
                      for i in range(0,len(ts)):
                          writer.writerow([date, ts[i], temp[i], lght[i]])
-                 # plot:
-                 if False:
-                    plt.plot(ts, temp)
-                    plt.gca().set_xticks(ts[::8])
-                    plt.gca().tick_params(axis='x', labelrotation=90)
-                    plt.title(date)
-                    plt.show()
+
 
 # convert buffer to floats containing the sensor data
 def outStr2Floats():
@@ -86,15 +80,41 @@ def parseOut():
         ts[i] = ts[i].replace("25","15").replace("50","30").replace("75","45")
     return ts, temp, lght, date
 
+# plot from CSV:
+def plotCSV():
+    ts = [str(x) for x in range(0, 24*4)]
+    temp = [x for x in range(0, 24*4)]
+    lght = [x for x in range(0, 24*4)]
+    date = ""
+    with open('log.csv', 'r') as f:
+        csv_reader = csv.reader(f)
+        for i, line in enumerate(csv_reader, 0):
+            j = i % 96
+            if len(line)==4:
+                if date == line[0]:
+                     ts[j] = line[1];
+                     temp[j] = float(line[2]); lght[j] = float(line[3])
+                else:
+                     ts[j] = line[1];
+                     temp[j] = float(line[2]); lght[j] = float(line[3])
+                     date = line[0];
+                     if i > (24*4):
+                        plt.plot(ts, temp, label=date)
+                        plt.xticks(ts[::8])
+                        plt.tick_params(axis='x', labelrotation=90)
+    plt.legend()
+    plt.show()
+
+
 # get current day and time:
 current_dateTime = datetime.now()
-
 # main loop that wakes up at defined time and collects the data
 while True:
     pause.until(datetime(current_dateTime.year, current_dateTime.month,
                          current_dateTime.day, 23, 58))
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(runa(0))
+    loop.run_until_complete(runa(1))
+    #plotCSV()
     pause.until(datetime(current_dateTime.year, current_dateTime.month,
-                         current_dateTime.day+1, 0, 2))
+                         current_dateTime.day+1, 0, 2))  # update date:
     current_dateTime = datetime.now()
