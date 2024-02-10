@@ -43,11 +43,12 @@ async def runa(day):
                      for i in range(0,len(ts)):
                          writer.writerow([date, ts[i], temp[i], lght[i]])
                  # plot:
-                 plt.plot(ts, temp)
-                 plt.gca().set_xticks(ts[::8])
-                 plt.gca().tick_params(axis='x', labelrotation=90)
-                 plt.title(date)
-                 plt.show()
+                 if False:
+                    plt.plot(ts, temp)
+                    plt.gca().set_xticks(ts[::8])
+                    plt.gca().tick_params(axis='x', labelrotation=90)
+                    plt.title(date)
+                    plt.show()
 
 # convert buffer to floats containing the sensor data
 def outStr2Floats():
@@ -90,8 +91,8 @@ current_dateTime = datetime.now()
 
 # main loop that wakes up at defined time and collects the data
 while True:
-    #pause.until(datetime(current_dateTime.year, current_dateTime.month,
-    #                     current_dateTime.day, 23, 58))
+    pause.until(datetime(current_dateTime.year, current_dateTime.month,
+                         current_dateTime.day, 23, 58))
     loop = asyncio.get_event_loop()
     loop.run_until_complete(runa(0))
     pause.until(datetime(current_dateTime.year, current_dateTime.month,
