@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+import numpy as np
 import pause
 import asyncio
 import array
@@ -13,7 +15,7 @@ command = b"\x03\x10prnt("+str.encode(str(day))+b")\n"
 
 out = ""
 
-# handle collected data sent back over BLE 
+# handle collected data sent back over BLE
 def uart_data_received(sender, data):
     global out
     out = out + (str(data.decode()))
@@ -35,6 +37,7 @@ async def runa():
                      c = c[20:]
                  await asyncio.sleep(2.0) # wait for a response
                  global out
+                 # cut out the output:
                  chIndex = out.find(">")
                  if chIndex != -1:
                       out = out[chIndex+1:]
@@ -42,10 +45,33 @@ async def runa():
                  if chIndex != -1:
                       out = out[:chIndex]
                  print(out)
+                 ## Parse string into array:
+                 date = out[1:11]
+                 outStr = ""
+                 for i in range(0,23):
+                      pOut = out[out.find(str(i).zfill(2)+":")+3:out.find(str(i+1).zfill(2)+":")]
+                      outStr = outStr + pOut[:-3] + ";"
+                 outStr = outStr + out[out.find("23:")+3:-2]
+                 # reformat to be able to split all floats:
+                 outStr = outStr.replace("]"," ").replace("["," ").replace("  ",";")
+                 outStr = outStr.replace(",",";").replace(" ","").split(";")
+                 dataPoints = [float(string) for string in outStr]
+                 temp = dataPoints[0::2]
+                 lght = dataPoints[1::2]
+                 # prepare time strings:
+                 ts = [x/100.0 for x in range(0, 24*100, 25)]
+                 for i in range(0,len(temp)):
+                     ts[i] = "{:2.2f}".format(ts[i]).zfill(5).replace(".",":")
+                 plt.plot(ts, temp)
+                 plt.gca().set_xticks(ts[::8])
+                 #plt.gca().set_xticklabels(ts)
+                 plt.gca().tick_params(axis='x', labelrotation=90)
+                 plt.tight_layout()
+                 plt.show()
 
 current_dateTime = datetime.now()
 
-while True:
+if True:
     pause.until(datetime(current_dateTime.year, current_dateTime.month,
                          current_dateTime.day, 23, 55))
     loop = asyncio.get_event_loop()
