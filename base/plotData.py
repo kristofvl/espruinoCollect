@@ -1,5 +1,9 @@
 import matplotlib.pyplot as plt
+import mplcursors
 import csv
+
+fig = plt.figure()
+plot = fig.add_subplot(111)
 
 # plot from CSV:
 def plotCSV(logFileName):
@@ -28,12 +32,20 @@ def plotCSV(logFileName):
             # plot last day
             plotDay(date, ts, temp, True)
 
+
 def plotDay(date, ts, temp, showPlot):
-    plt.plot(ts, temp, label=date)
+    plt.plot(ts, temp, label=date, linestyle="-",
+        marker="o", alpha=0.85, markersize=2)
     plt.xticks(ts[::8])
     plt.tick_params(axis='x', labelrotation=90)
     if showPlot:
         plt.legend()
+        plt.tight_layout()
+        cursor = mplcursors.cursor(hover=True)
+        cursor.connect(
+            "add", lambda sel: sel.annotation.set_text(
+                ts[ int(sel.target[0]) ] + ": " +
+                "{:3.1f}".format(sel.target[1]) + "'C" ) )
         plt.show()
 
 plotCSV('log.csv')
