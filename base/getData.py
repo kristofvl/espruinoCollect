@@ -23,25 +23,29 @@ def collectCmd(day):
 
 # scan for Espruino devices and ask for data
 async def runa(day):
-    devices = await BleakScanner.discover()
-    for d in devices:
-        if 'Puck.js' in str(d.details):
-             print("Connecting to "+str(d.details))
-             async with BleakClient(d) as client:
-                 #print("Connected")
-                 await client.start_notify(UUID_NORDIC_RX, uart_data_received)
-                 c = collectCmd(day)
-                 while len(c)>0:
-                     await client.write_gatt_char(UUID_NORDIC_TX, bytearray(c[0:20]), True)
-                     c = c[20:]
-                 await asyncio.sleep(3.0) # wait for a response within 3 seconds
-                 ts, temp, lght, date = parseOut()
-                 # write to CSV:
-                 with open('log.csv', 'a', encoding='UTF8') as f:
-                     writer = csv.writer(f)
-                     # write a row to the csv file
-                     for i in range(0,len(ts)):
-                         writer.writerow([date, ts[i], temp[i], lght[i]])
+    uploadWorked = False
+    while not uploadWorked:
+        devices = await BleakScanner.discover()
+        for d in devices:
+            if 'Puck.js' in str(d.details):
+                print("Connecting to "+str(d.details))
+                async with BleakClient(d) as client:
+                    #print("Connected")
+                    await client.start_notify(UUID_NORDIC_RX, uart_data_received)
+                    c = collectCmd(day)
+                    while len(c)>0:
+                        await client.write_gatt_char(UUID_NORDIC_TX, bytearray(c[0:20]), True)
+                        c = c[20:]
+                    await asyncio.sleep(3.0) # wait for a response within 3 seconds
+                    ts, temp, lght, date = parseOut()
+                    if len(ts) > 1:
+                        uploadWorked = True
+                        # write to CSV:
+                        with open('log.csv', 'a', encoding='UTF8') as f:
+                            writer = csv.writer(f)
+                            # write a row to the csv file
+                            for i in range(0,len(ts)):
+                                writer.writerow([date, ts[i], temp[i], lght[i]])
 
 
 # convert buffer to floats containing the sensor data
@@ -80,31 +84,6 @@ def parseOut():
         ts[i] = ts[i].replace("25","15").replace("50","30").replace("75","45")
     return ts, temp, lght, date
 
-# plot from CSV:
-def plotCSV():
-    ts = [str(x) for x in range(0, 24*4)]
-    temp = [x for x in range(0, 24*4)]
-    lght = [x for x in range(0, 24*4)]
-    date = ""
-    with open('log.csv', 'r') as f:
-        csv_reader = csv.reader(f)
-        for i, line in enumerate(csv_reader, 0):
-            j = i % 96
-            if len(line)==4:
-                if date == line[0]:
-                     ts[j] = line[1];
-                     temp[j] = float(line[2]); lght[j] = float(line[3])
-                else:
-                     ts[j] = line[1];
-                     temp[j] = float(line[2]); lght[j] = float(line[3])
-                     date = line[0];
-                     if i > (24*4):
-                        plt.plot(ts, temp, label=date)
-                        plt.xticks(ts[::8])
-                        plt.tick_params(axis='x', labelrotation=90)
-    plt.legend()
-    plt.show()
-
 
 # get current day and time:
 current_dateTime = datetime.now()
@@ -113,8 +92,7 @@ while True:
     pause.until(datetime(current_dateTime.year, current_dateTime.month,
                          current_dateTime.day, 23, 58))
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(runa(1))
-    #plotCSV()
+    loop.run_until_complete(runa(0))
     pause.until(datetime(current_dateTime.year, current_dateTime.month,
                          current_dateTime.day+1, 0, 2))  # update date:
     current_dateTime = datetime.now()
