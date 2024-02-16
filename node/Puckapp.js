@@ -25,7 +25,11 @@ function toQuart(d) {  // return time d to quarter of hour
 function measure() {  // fill in current measurements
   indx = toQuart(new Date());
   m.temp[indx] = E.getTemperature()*10;
-  m.lght[indx] = Puck.light()*999;
+  if (typeof(Puck) != "undefined") {
+     m.lght[indx] = Puck.light()*999;
+  } else if ((typeof(Bangle) != "undefined")) {
+     m.lght[indx] = Bangle.getHealthStatus().steps;
+  }
   if (indx==MAX-1) {  // archive at the end of the day
     for (i=0; i<MAX; i++) arch.atemp[i+MAX*itr] = m.temp[i];
     for (i=0; i<MAX; i++) arch.alght[i+MAX*itr] = m.lght[i];
@@ -60,12 +64,15 @@ function prnt(day) {  // print out daily view via serial
 }
 
 function upstat() {  // sparse colored led flash for user feedback
-  if (m.temp[indx] < low_temp)
-    digitalPulse(LED3, 1, 70); // blue for too cold
-  if (m.temp[indx] > hgh_temp)
-    digitalPulse(LED1, 1, 70); // red for too warm
-  if ( (m.temp[indx] >= low_temp) && (m.temp[indx] <= hgh_temp) )
-    digitalPulse(LED2, 1, 70); // green for perfect
+  if (typeof(Puck) != "undefined") {
+    if (m.temp[indx] < low_temp)
+      digitalPulse(LED3, 1, 70); // blue for too cold
+    if (m.temp[indx] > hgh_temp)
+      digitalPulse(LED1, 1, 70); // red for too warm
+    if ( (m.temp[indx] >= low_temp) && (m.temp[indx] <= hgh_temp) )
+      digitalPulse(LED2, 1, 70); // green for perfect
+  } else {
+  }
 }
 
 var temp_int = setInterval(measure, INV);
