@@ -2,21 +2,24 @@ import matplotlib.pyplot as plt
 import mplcursors
 import csv
 
+filename = 'log.csv'
+
 # plot all days from CSV log file:
 def plotCSV(logFileName):
     date = ""
     try:
         # first read file once to see how many lines & dimensions we have:
         file = open(logFileName)
-        numSensors = 2
         readsPerHour = 4
         numDays = int( sum(1 for line in file) / (24*readsPerHour) )
+        file.seek(0)  # go back to file's start and check out 1st line:
+        numSensors = file.readline().count(',')-1
         ts = [str(x) for x in range(24*readsPerHour)]
-        data = [ [x for x in range(24*readsPerHour)]
-                    for y in range(numSensors) ]
+        data = [ [0.0 for x in range(24*readsPerHour)]
+                      for y in range(numSensors) ]
         fig, axs = plt.subplots(1,numSensors)
         fig.set_size_inches(10, 5)
-        file = open(logFileName)
+        file.seek(0)
     except FileNotFoundError:
         print('Error: '+file.name+' not found')
     else:
@@ -68,4 +71,4 @@ def plotShow(axes, ts):
     plt.show()
 
 # start the plotting:
-plotCSV('log.csv')
+plotCSV(filename)
