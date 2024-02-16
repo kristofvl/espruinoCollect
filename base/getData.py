@@ -37,19 +37,20 @@ async def runa(day):
                         await client.write_gatt_char(UUID_NORDIC_TX, bytearray(c[0:20]), True)
                         c = c[20:]
                     await asyncio.sleep(3.0) # wait for a response within 3 seconds
-                    ts, temp, lght, date = parseOut()
+                    ts, data, date = parseOut()
                     if len(ts) > 1:
                         uploadWorked = True
-                        # write to CSV:
-                        devID = str(d.details)
-                        devID_idx = devID.find('name = Puck.js ')+15
-                        devID = devID[ devID_idx : devID_idx+4 ]
-                        with open(os.path.join("./logs", devID+'.csv'), 'a', encoding='UTF8') as f:
-                            writer = csv.writer(f)
-                            # write a row to the csv file
-                            for i in range(0,len(ts)):
-                                writer.writerow([date, ts[i], temp[i], lght[i]])
+                        write2CSV(str(d.details), ts, data, date)
 
+# write day's data to CSV:
+def write2CSV(dev, ts, data, date):
+    devID_idx = dev.find('name = Puck.js ')+15
+    dev = dev[ devID_idx : devID_idx+4 ]
+    with open(os.path.join("./logs", dev+'.csv'), 'a', encoding='UTF8') as f:
+        writer = csv.writer(f)
+        for i in range(0,len(ts)):
+            writer.writerow([date, ts[i], data[5*i], data[5*i+1],
+                                data[5*i+2], data[5*i+3], data[5*i+4]])
 
 # convert buffer to floats containing the sensor data
 def outStr2Floats():
@@ -74,25 +75,27 @@ def parseOut():
     chIndex = out.find(">")
     if chIndex != -1:
         out = out[:chIndex]
-    #print(out)
+    print(out)
     ## Parse string into array:
     dataPoints = outStr2Floats()
+    #print(dataPoints)
     date = out[1:11]
+    numSensors = 5
     temp = dataPoints[0::2]
     lght = dataPoints[1::2]
     # prepare time strings:
     ts = [x/100.0 for x in range(0, 24*100, 25)]
-    for i in range(0,len(temp)):
+    for i in range(0,int(len(dataPoints)/numSensors)):
         ts[i] = "{:2.2f}".format(ts[i]).zfill(5).replace(".",":")
         ts[i] = ts[i].replace("25","15").replace("50","30").replace("75","45")
-    return ts, temp, lght, date
+    return ts, dataPoints, date
 
 # get current day and time:
 current_dateTime = datetime.now()
 # main loop that wakes up at defined time and collects the data
 while True:
-    pause.until(datetime(current_dateTime.year, current_dateTime.month,
-                         current_dateTime.day, 23, 58))
+    #pause.until(datetime(current_dateTime.year, current_dateTime.month,
+    #                     current_dateTime.day, 23, 58))
     loop = asyncio.get_event_loop()
     loop.run_until_complete(runa(0))
     pause.until(datetime(current_dateTime.year, current_dateTime.month,
