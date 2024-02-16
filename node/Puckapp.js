@@ -1,15 +1,13 @@
 const MAX = 96;  // quarter of hours per day, (1440/15)
 const MAX_ARX = 50;  // local storage for past MAX_ARX days
 const INV = 900000;  // interval = 15 minutes = 1000*60*60*15
-var temp = new Int16Array(MAX);  // temperature measurements
-var lght = new Int16Array(MAX);  // light measurements
-var m = {temp, lght};
+// day's measurements:
+var data = [ new Int16Array(MAX), new Int16Array(MAX) ];
 var indx = 0;
 var low_temp = 190;  // alert when below this temperature x10
 var hgh_temp = 220;  // alert when above this temperature x10
-var atemp = new Int16Array(MAX*MAX_ARX);  // temperature measurements
-var alght = new Int16Array(MAX*MAX_ARX);  // light measurements
-var arch = {atemp, alght};
+// all measurements:
+var adata = [ new Int16Array(MAX*MAX_ARX), new Int16Array(MAX*MAX_ARX)];
 var itr = 0;
 
 function pad2(n) {  // pad an integer to 2 digits
@@ -24,18 +22,18 @@ function toQuart(d) {  // return time d to quarter of hour
 
 function measure() {  // fill in current measurements
   indx = toQuart(new Date());
-  m.temp[indx] = E.getTemperature()*10;
+  data[0][indx] = E.getTemperature()*10;
   if (typeof(Puck) != "undefined") {
-     m.lght[indx] = Puck.light()*999;
+     data[1][indx] = Puck.light()*999;
   } else if ((typeof(Bangle) != "undefined")) {
-     m.lght[indx] = Bangle.getHealthStatus().steps;
+     data[1][indx] = Bangle.getHealthStatus().steps;
   }
   if (indx==MAX-1) {  // archive at the end of the day
-    for (i=0; i<MAX; i++) arch.atemp[i+MAX*itr] = m.temp[i];
-    for (i=0; i<MAX; i++) arch.alght[i+MAX*itr] = m.lght[i];
+    for (i=0; i<MAX; i++) adata[0][i+MAX*itr] = data[0][i];
+    for (i=0; i<MAX; i++) adata[1][i+MAX*itr] = data[1][i];
     itr++;  if (itr==MAX_ARX) itr = 0;
   }
-  NRF.setAdvertising({0x1809 : [Math.round(m.temp[indx])] });
+  NRF.setAdvertising({0x1809 : [Math.round(data[0][indx])] });
 }
 
 function prnt(day) {  // print out daily view via serial
@@ -49,13 +47,13 @@ function prnt(day) {  // print out daily view via serial
     for (i=j; i<j+4; i++) {
       if (day==0) {
         outstr += (i==indx)?"[":" ";
-        outstr += fPad21(m.temp[i]/10,1)+",";
-        outstr += fPad21(m.lght[i]/10,0);
+        outstr += fPad21(data[0][i]/10,1)+",";
+        outstr += fPad21(data[1][i]/10,0);
         outstr += (i==indx)?"]":" ";
       } else {
         day_mem = ((itr-day)<0?MAX_ARX+(itr-day):(itr-day))%MAX_ARX;
-        outstr += " "+fPad21(arch.atemp[i+MAX*day_mem]/10,1)+",";
-        outstr += fPad21(arch.alght[i+MAX*day_mem]/10,0)+" ";
+        outstr += " "+fPad21(adata[0][i+MAX*day_mem]/10,1)+",";
+        outstr += fPad21(adata[1][i+MAX*day_mem]/10,0)+" ";
       }
     }
     console.log(outstr);
@@ -65,11 +63,11 @@ function prnt(day) {  // print out daily view via serial
 
 function upstat() {  // sparse colored led flash for user feedback
   if (typeof(Puck) != "undefined") {
-    if (m.temp[indx] < low_temp)
+    if (data[0][indx] < low_temp)
       digitalPulse(LED3, 1, 70); // blue for too cold
-    if (m.temp[indx] > hgh_temp)
+    if (data[0][indx] > hgh_temp)
       digitalPulse(LED1, 1, 70); // red for too warm
-    if ( (m.temp[indx] >= low_temp) && (m.temp[indx] <= hgh_temp) )
+    if ( (data[0][indx] >= low_temp) && (data[0][indx] <= hgh_temp) )
       digitalPulse(LED2, 1, 70); // green for perfect
   } else {
   }
@@ -77,3 +75,6 @@ function upstat() {  // sparse colored led flash for user feedback
 
 var temp_int = setInterval(measure, INV);
 var stat_int = setInterval(upstat, 19999);
+
+
+
