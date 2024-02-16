@@ -35,10 +35,11 @@ function measure() {  // fill in current measurements
      data[2][indx] = Puck.getBatteryPercentage();
      data[3][indx] = Puck.capSense();
   } else if ((typeof(Bangle) != "undefined")) {
-     data[1][indx] = Bangle.getHealthStatus().bpmConfidence;
-     data[2][indx] = Bangle.getHealthStatus().bpm;
-     data[3][indx] = Bangle.getHealthStatus().steps;
-     data[4][indx] = Bangle.getHealthStatus().movement;
+     bhs = Bangle.getHealthStatus('last')
+     data[1][indx] = bhs.bpmConfidence;
+     data[2][indx] = bhs.bpm;
+     data[3][indx] = bhs.steps;
+     data[4][indx] = bhs.movement;
   }
   if (indx==MAX-1) {  // archive at the end of the day
     for (s=0; s<5; s++)
