@@ -62,18 +62,16 @@ function prnt(day) {  // print out daily view via serial
       if (day==0) {
         outstr += (i==indx)?"[":" ";
         outstr += fPad21(data[0][i]/10,1)+",";
-        outstr += fPad21(data[1][i]/10,0)+",";
-        outstr += fPad5(data[2][i],0)+",";
-        outstr += fPad5(data[3][i],0)+",";
-        outstr += fPad5(data[4][i],0);
+        outstr += fPad21(data[1][i]/10,0);
+        for (k=2; k<5; k++) 
+          outstr += ","+fPad5(data[k][i]);
         outstr += (i==indx)?"]":" ";
       } else {
         day_mem = ((itr-day)<0?MAX_ARX+(itr-day):(itr-day))%MAX_ARX;
         outstr += " "+fPad21(adata[0][i+MAX*day_mem]/10,1)+",";
-        outstr += fPad21(adata[1][i+MAX*day_mem]/10,0)+",";
-        outstr += fPad5(adata[2][i+MAX*day_mem],0)+",";
-        outstr += fPad5(adata[3][i+MAX*day_mem],0)+",";
-        outstr += fPad5(adata[4][i+MAX*day_mem],0);
+        outstr += fPad21(adata[1][i+MAX*day_mem]/10,0);
+        for (k=2; k<5; k++) 
+          outstr += ","+fPad5(adata[k][i+MAX*day_mem]);
       }
     }
     console.log(outstr);
