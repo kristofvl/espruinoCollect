@@ -90,8 +90,8 @@ def parseOut():
 current_dateTime = datetime.now()
 # main loop that wakes up at defined time and collects the data
 while True:
-    #pause.until(datetime(current_dateTime.year, current_dateTime.month,
-    #    current_dateTime.day, 23, 58))
+    pause.until(datetime(current_dateTime.year, current_dateTime.month,
+        current_dateTime.day, 23, 58))
     loop = asyncio.get_event_loop()
     loop.run_until_complete(runa(0))
     pause.until(datetime(current_dateTime.year, current_dateTime.month,
