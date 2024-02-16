@@ -1,8 +1,7 @@
 import matplotlib.pyplot as plt
 import mplcursors
 import csv
-
-filename = 'log.csv'
+import os
 
 # plot all days from CSV log file:
 def plotCSV(logFileName):
@@ -11,6 +10,7 @@ def plotCSV(logFileName):
         # first read file once to see how many lines & dimensions we have:
         file = open(logFileName)
         readsPerHour = 4
+        devID = logFileName[-8:-4]  # extract device ID
         numDays = int( sum(1 for line in file) / (24*readsPerHour) )
         file.seek(0)  # go back to file's start and check out 1st line:
         numSensors = file.readline().count(',')-1
@@ -43,7 +43,7 @@ def plotCSV(logFileName):
             # plot last day
             for s in range(numSensors):
                 plotDay(axs[s], date, ts, data[s][:], numDays-1, numDays)
-            plotShow(axs, ts)
+            plotShow(axs, ts, devID)
 
 # plot a single day, use showPlot to display all after the last day
 def plotDay(ax, date, ts, data, day, numDays):
@@ -53,7 +53,7 @@ def plotDay(ax, date, ts, data, day, numDays):
         color=(greyLvl,greyLvl,greyLvl) )
 
 # finish the plots, add interactivty and a legend
-def plotShow(axes, ts):
+def plotShow(axes, ts, devID):
     for ax in axes:
         ax.set_xticks(ts[::8])
         ax.tick_params(axis='x', labelrotation=90)
@@ -61,14 +61,19 @@ def plotShow(axes, ts):
         ax.legend()
         ax.set_xlim([0,len(ts)-1])
     plt.tight_layout()
+    plt.gcf().canvas.manager.set_window_title(devID)
     # add interactive cursor:
-    cursor = mplcursors.cursor( hover=mplcursors.HoverMode.Transient )
+    cursor = mplcursors.cursor( hover=mplcursors.HoverMode.Transient,
+        highlight=True, highlight_kwargs=dict(linewidth=3, color="blue") )
     cursor.connect(  # display time and temperature:
         "add", lambda sel: sel.annotation.set_text(
             sel.artist.get_label() + "\n" +
             ts[ int(sel.target[0]) ] + ": " +
             "{:3.1f}".format(sel.target[1]) ) )
-    plt.show()
 
 # start the plotting:
-plotCSV(filename)
+logDir = "./logs"
+for file in os.listdir(logDir):
+    if file.endswith(".csv"):
+        plotCSV(os.path.join(logDir, file))
+plt.show()
