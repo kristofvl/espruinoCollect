@@ -3,7 +3,6 @@ import asyncio
 from bleak import BleakScanner
 from bleak import BleakClient
 from datetime import datetime
-import matplotlib.pyplot as plt
 import csv
 
 UUID_NORDIC_TX = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
@@ -41,7 +40,10 @@ async def runa(day):
                     if len(ts) > 1:
                         uploadWorked = True
                         # write to CSV:
-                        with open('log.csv', 'a', encoding='UTF8') as f:
+                        devID = str(d.details)
+                        devID_idx = devID.find('name = Puck.js ')+15
+                        devID = devID[ devID_idx : devID_idx+4 ]
+                        with open('log_'+devID+'.csv', 'a', encoding='UTF8') as f:
                             writer = csv.writer(f)
                             # write a row to the csv file
                             for i in range(0,len(ts)):
@@ -84,13 +86,12 @@ def parseOut():
         ts[i] = ts[i].replace("25","15").replace("50","30").replace("75","45")
     return ts, temp, lght, date
 
-
 # get current day and time:
 current_dateTime = datetime.now()
 # main loop that wakes up at defined time and collects the data
 while True:
-    pause.until(datetime(current_dateTime.year, current_dateTime.month,
-                         current_dateTime.day, 23, 58))
+    #pause.until(datetime(current_dateTime.year, current_dateTime.month,
+    #    current_dateTime.day, 23, 58))
     loop = asyncio.get_event_loop()
     loop.run_until_complete(runa(0))
     pause.until(datetime(current_dateTime.year, current_dateTime.month,
