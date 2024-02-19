@@ -27,7 +27,7 @@ async def runa(day):
     while not uploadWorked:
         devices = await BleakScanner.discover()
         for d in devices:
-            if 'Puck.js' in str(d.details):
+            if '.js ' in str(d.details):
                 print("Connecting to "+str(d.details))
                 async with BleakClient(d) as client:
                     #print("Connected")
@@ -44,13 +44,14 @@ async def runa(day):
 
 # write day's data to CSV:
 def write2CSV(dev, ts, data, date):
-    devID_idx = dev.find('name = Puck.js ')+15
-    dev = dev[ devID_idx : devID_idx+4 ]
-    with open(os.path.join("./logs", dev+'.csv'), 'a', encoding='UTF8') as f:
-        writer = csv.writer(f)
-        for i in range(0,len(ts)):
-            writer.writerow([date, ts[i], data[5*i], data[5*i+1],
-                                data[5*i+2], data[5*i+3], data[5*i+4]])
+    devID_idx = dev.find('.js ')+4
+    if devID_idx != 3:  # ( find returns -1 if not found )
+        dev = dev[ devID_idx : devID_idx+4 ]
+        with open(os.path.join("./logs", dev+'.csv'), 'a', encoding='UTF8') as f:
+            writer = csv.writer(f)
+            for i in range(0,len(ts)):
+                writer.writerow([date, ts[i], data[5*i], data[5*i+1],
+                                    data[5*i+2], data[5*i+3], data[5*i+4]])
 
 # convert buffer to floats containing the sensor data
 def outStr2Floats():
