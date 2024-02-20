@@ -26,6 +26,7 @@ async def runa(day):
     uploadWorked = False
     while not uploadWorked:
         devices = await BleakScanner.discover()
+        print(devices)
         for d in devices:
             if '.js ' in str(d.details):
                 print("Connecting to "+str(d.details))
@@ -56,6 +57,8 @@ def write2CSV(dev, ts, data, date):
 # convert buffer to floats containing the sensor data
 def outStr2Floats():
     global out
+    if len(out) == 0:  # if no output comes back..
+        return []
     outStr = ""
     for i in range(0,23):  # for every hour:
         pOut = out[out.find(str(i).zfill(2)+":")+3:out.find(str(i+1).zfill(2)+":")]
@@ -76,10 +79,10 @@ def parseOut():
     chIndex = out.find(">")
     if chIndex != -1:
         out = out[:chIndex]
-    print(out)
     ## Parse string into array:
     dataPoints = outStr2Floats()
-    #print(dataPoints)
+    if len(dataPoints) == 0:
+        return [],[],[]
     date = out[1:11]
     numSensors = 5
     temp = dataPoints[0::2]
@@ -95,8 +98,8 @@ def parseOut():
 current_dateTime = datetime.now()
 # main loop that wakes up at defined time and collects the data
 while True:
-    pause.until(datetime(current_dateTime.year, current_dateTime.month,
-        current_dateTime.day, 23, 58))
+    #pause.until(datetime(current_dateTime.year, current_dateTime.month,
+    #    current_dateTime.day, 23, 58))
     loop = asyncio.get_event_loop()
     loop.run_until_complete(runa(0))
     pause.until(datetime(current_dateTime.year, current_dateTime.month,
