@@ -2,6 +2,7 @@ import pause
 import asyncio
 from bleak import BleakScanner
 from bleak import BleakClient
+from bleak import exc
 from datetime import datetime
 import csv
 import os
@@ -25,23 +26,26 @@ def collectCmd(day):
 async def runa(day):
     uploadWorked = False
     while not uploadWorked:
-        devices = await BleakScanner.discover()
+        devices = await BleakScanner.discover(timeout = 20.0)
         print(devices)
         for d in devices:
             if '.js ' in str(d.details):
                 print("Connecting to "+str(d.details))
-                async with BleakClient(d) as client:
-                    #print("Connected")
-                    await client.start_notify(UUID_NORDIC_RX, uart_data_received)
-                    c = collectCmd(day)
-                    while len(c)>0:
-                        await client.write_gatt_char(UUID_NORDIC_TX, bytearray(c[0:20]), True)
-                        c = c[20:]
-                    await asyncio.sleep(3.0) # wait for a response within 3 seconds
-                    ts, data, date = parseOut()
-                    if len(ts) > 1:
-                        uploadWorked = True
-                        write2CSV(str(d.details), ts, data, date)
+                try:
+                    async with BleakClient(d) as client:
+                        #print("Connected")
+                        await client.start_notify(UUID_NORDIC_RX, uart_data_received)
+                        c = collectCmd(day)
+                        while len(c)>0:
+                            await client.write_gatt_char(UUID_NORDIC_TX, bytearray(c[0:20]), True)
+                            c = c[20:]
+                        await asyncio.sleep(5.0) # wait for a response within 3 seconds
+                        ts, data, date = parseOut()
+                        if len(ts) > 1:
+                            uploadWorked = True
+                            write2CSV(str(d.details), ts, data, date)
+                except exc.BleakError:  # in case BLE connection disconnects
+                    print("Bleak Error")
 
 # write day's data to CSV:
 def write2CSV(dev, ts, data, date):
@@ -57,8 +61,6 @@ def write2CSV(dev, ts, data, date):
 # convert buffer to floats containing the sensor data
 def outStr2Floats():
     global out
-    if len(out) == 0:  # if no output comes back..
-        return []
     outStr = ""
     for i in range(0,23):  # for every hour:
         pOut = out[out.find(str(i).zfill(2)+":")+3:out.find(str(i+1).zfill(2)+":")]
@@ -72,21 +74,23 @@ def outStr2Floats():
 # parse the output from the buffer
 def parseOut():
     global out
-    # cut out the output:
-    chIndex = out.find(">")
+    # cut out the output when the year starts:
+    chIndex = out.find(str(datetime.now().year))
     if chIndex != -1:
-        out = out[chIndex+1:]
-    chIndex = out.find(">")
-    if chIndex != -1:
-        out = out[:chIndex]
+        out = out[chIndex:]
+    if len(out) < 150:  # if no output comes back..
+        print ("Too few data in response")
+        out = ""
+        return [],[],[]
     ## Parse string into array:
     dataPoints = outStr2Floats()
     if len(dataPoints) == 0:
+        print ("Bad formatting in response")
+        out = ""
         return [],[],[]
     date = out[1:11]
     numSensors = 5
-    temp = dataPoints[0::2]
-    lght = dataPoints[1::2]
+    out = ""  # flush out buffer
     # prepare time strings:
     ts = [x/100.0 for x in range(0, 24*100, 25)]
     for i in range(0,int(len(dataPoints)/numSensors)):
