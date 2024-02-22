@@ -1,4 +1,3 @@
-import pause
 import asyncio
 from bleak import BleakScanner
 from bleak import BleakClient
@@ -78,7 +77,7 @@ def parseOut():
     chIndex = out.find(str(datetime.now().year))
     if chIndex != -1:
         out = out[chIndex:]
-    if len(out) < 150:  # if no output comes back..
+    if len(out) < 150:  # if no full output page comes back..
         print ("Too few data in response")
         out = ""
         return [],[],[]
@@ -88,7 +87,7 @@ def parseOut():
         print ("Bad formatting in response")
         out = ""
         return [],[],[]
-    date = out[1:11]
+    date = out[0:10]
     numSensors = 5
     out = ""  # flush out buffer
     # prepare time strings:
@@ -97,15 +96,3 @@ def parseOut():
         ts[i] = "{:2.2f}".format(ts[i]).zfill(5).replace(".",":")
         ts[i] = ts[i].replace("25","15").replace("50","30").replace("75","45")
     return ts, dataPoints, date
-
-# get current day and time:
-current_dateTime = datetime.now()
-# main loop that wakes up at defined time and collects the data
-while True:
-    #pause.until(datetime(current_dateTime.year, current_dateTime.month,
-    #    current_dateTime.day, 23, 58))
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(runa(0))
-    pause.until(datetime(current_dateTime.year, current_dateTime.month,
-                         current_dateTime.day+1, 0, 2))  # update date:
-    current_dateTime = datetime.now()
