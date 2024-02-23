@@ -7,8 +7,8 @@ from datetime import datetime
 current_dateTime = datetime.now()
 # main loop that wakes up at defined time and collects the data
 while True:
-    #pause.until(datetime(current_dateTime.year, current_dateTime.month,
-    #    current_dateTime.day, 23, 58))  # start two minutes before midnight
+    pause.until(datetime(current_dateTime.year, current_dateTime.month,
+        current_dateTime.day, 23, 58))  # start two minutes before midnight
     loop = asyncio.get_event_loop()
     loop.run_until_complete(runa(0))
     pause.until(datetime(current_dateTime.year, current_dateTime.month,
