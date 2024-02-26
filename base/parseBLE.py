@@ -65,9 +65,10 @@ def outStr2Floats():
         pOut = out[out.find(str(i).zfill(2)+":")+3:out.find(str(i+1).zfill(2)+":")]
         outStr = outStr + pOut[:-3] + ";"
     outStr = outStr + out[out.find("23:")+3:-2]  # add data from 23:00-00:00
-    # reformat to be able to split all floats:
-    outStr = outStr.replace("]"," ").replace("["," ").replace("  ",";")
-    outStr = outStr.replace(",",";").replace(" ","").split(";")
+    outStr = outStr.replace("  "," ").replace(" ",";")  # turn spaces into ;
+    outStr = outStr.replace("]","").replace("[","")  # get rid of braces
+    outStr = outStr.replace(",",";").split(";")  # change , into ; and split
+    outStr = list(filter(None, outStr))  # remove empty strings
     return [float(string) for string in outStr]
 
 # parse the output from the buffer
