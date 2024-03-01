@@ -59,6 +59,12 @@ def write2CSV(dev, ts, data, date):
 
 # convert buffer to floats containing the sensor data
 def outStr2Floats():
+    def isFloat(string):
+        try:
+            float(string)
+            return True
+        except:
+            return False
     global out
     outStr = ""
     for i in range(0,23):  # for every hour:
@@ -68,7 +74,7 @@ def outStr2Floats():
     outStr = outStr.replace("  "," ").replace(" ",";")  # turn spaces into ;
     outStr = outStr.replace("]","").replace("[","")  # get rid of braces
     outStr = outStr.replace(",",";").split(";")  # change , into ; and split
-    outStr = list(filter(None, outStr))  # remove empty strings
+    outStr = list(filter(isFloat, outStr))  # remove empty strings
     return [float(string) for string in outStr]
 
 # parse the output from the buffer
