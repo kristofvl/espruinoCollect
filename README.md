@@ -6,5 +6,5 @@ The code consists of a python script that routinely collects sensor data over BL
 Example 1: Office temperature (left, in degrees Celcius) and ambient light (right), measured by a nearby [Puck.js](https://www.puck-js.com/) over the past days:
 ![example plot](https://github.com/kristofvl/espruinoCollect/blob/main/plot.png?raw=true)
 
-Example 2: Nearby collected Bangle.js data (heart rate, steps, movement, and temperature)
+Example 2: Nearby collected Bangle.js data (temperatur, heart rate, steps)
 ![example plot](https://github.com/kristofvl/espruinoCollect/blob/main/plot_Bangle.png?raw=true)
