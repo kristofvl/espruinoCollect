@@ -7,3 +7,4 @@ Example 1: Office temperature (left, in degrees Celcius) and ambient light (righ
 ![example plot](https://github.com/kristofvl/espruinoCollect/blob/main/plot.png?raw=true)
 
 Example 2: Nearby collected Bangle.js data (heart rate, steps, movement, and temperature)
+![example plot](https://github.com/kristofvl/espruinoCollect/blob/main/plot_Bangle.png?raw=true)
