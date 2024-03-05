@@ -48,7 +48,15 @@ class plotData:
                             self.date = line[0];
                 # plot last day and calendar
                 self.appendDay(0.01)
-                self.plotShow()
+                self.cp = self.plotShow()
+                cid = self.fig.canvas.mpl_connect('button_press_event', self.onclick)
+
+    def onclick(self, event):
+        if self.cp.ax == event.inaxes:
+            print("clicked in calendar")
+            print('%s button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
+                ('double' if event.dblclick else 'single', event.button,
+                event.x, event.y, event.xdata, event.ydata))
 
     # plot a single day, use showPlot to display all after the last day:
     def plotDay(self, ax, data, greyLvl):
@@ -83,6 +91,7 @@ class plotData:
                 sel.artist.get_label() + "\n" +
                 self.ts[ int(sel.target[0]) ] + ": " +
                 "{:3.1f}".format(sel.target[1]) ) )
+        return cp
 
 # start the plotting:
 logDir = "./logs"
