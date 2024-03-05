@@ -7,25 +7,25 @@ import os
 
 class plotData:
 
-    # plot all days from CSV log file:
-    def plotCSV(self, logFileName):
-        date = ""
+    def __init__(self, logFileName):
+        self.date = ""
+        self.fillDays = []  # all days in dataset
+        self.colors = []    # color code for days data
         try:
             # first read file once to see how many lines & dimensions we have:
             file = open(logFileName)
-            readsPerHour = 4
-            self.fillDays = []
+            self.readsPerHour = 4  # to do: automate
             self.devID = logFileName[-8:-4]  # extract device ID
-            self.numDays = int( sum(1 for line in file) / (24*readsPerHour) )
+            self.numDays = int( sum(1 for line in file) /
+                                (24*self.readsPerHour) )
             file.seek(0)  # go back to file's start and check out 1st line:
             self.numSensors = file.readline().count(',')-1
-            self.ts = [str(x) for x in range(24*readsPerHour)]
-            self.data = [ [0.0 for x in range(24*readsPerHour)]
+            self.ts = [str(x) for x in range(24*self.readsPerHour)]
+            self.data = [ [0.0 for x in range(24*self.readsPerHour)]
                         for y in range(self.numSensors) ]
             self.fig, self.axs = plt.subplots(1,self.numSensors+1)
             self.fig.canvas.manager.set_window_title(self.devID)
             self.fig.set_size_inches(17, 4)
-            self.date = ""
             file.seek(0)  # go back to file's start for reading data
         except FileNotFoundError:
             print('Error: '+file.name+' not found')
@@ -41,25 +41,28 @@ class plotData:
                         for s in range(self.numSensors):
                             self.data[s][j] = float(line[2+s])
                         if self.date != line[0]:
-                            if i >= (24*readsPerHour):  # end of day reached
-                                thisDay = int(i/(24*readsPerHour))-1
-                                for s in range(self.numSensors):
-                                    self.plotDay(self.axs[s], self.data[s][:],
-                                            thisDay)
+                            if i >= (24*self.readsPerHour):  # end of day reached
+                                thisDay = int(i/(24*self.readsPerHour))-1
+                                greyLvl = 1-((thisDay+1)/self.numDays)
+                                self.appendDay(greyLvl)
                             self.date = line[0];
                 # plot last day and calendar
-                for s in range(self.numSensors):
-                    self.plotDay(self.axs[s], self.data[s][:], self.numDays-1)
+                self.appendDay(0.01)
                 self.plotShow()
 
-    # plot a single day, use showPlot to display all after the last day
-    def plotDay(self, ax, data, day):
-        greyLvl = 1-((day+1)/self.numDays)
+    # plot a single day, use showPlot to display all after the last day:
+    def plotDay(self, ax, data, greyLvl):
         ax.plot(self.ts, data, label=self.date, linestyle="-",
             marker="o", alpha=0.95, markersize=2,
             color=(greyLvl,greyLvl,greyLvl) )
-        self.fillDays.append( ( int(self.date[:4]), int(self.date[5:7]),
+
+    # if end of day reached, add day info and color to plots and calendar
+    def appendDay(self, greyLvl):
+            self.fillDays.append( ( int(self.date[:4]), int(self.date[5:7]),
             int(self.date[8:10]) ) )
+            self.colors.append(greyLvl)
+            for s in range(self.numSensors):
+                self.plotDay(self.axs[s], self.data[s][:], greyLvl)
 
     # finish the plots, add interactivty and a legend
     def plotShow(self):
@@ -69,7 +72,7 @@ class plotData:
             ax.grid(visible=True, which='major', axis='both')
             ax.legend(fancybox=True, shadow=True).set_draggable(True)
             ax.set_xlim([0,len(self.ts)-1])
-        cp = CalPlot(self.axs[-1], self.fillDays)
+        cp = CalPlot(self.axs[-1], self.fillDays, self.colors)
         plt.tight_layout()
         # add interactive cursor:
         cursor = mplcursors.cursor( hover=mplcursors.HoverMode.Transient,
@@ -82,13 +85,10 @@ class plotData:
                 "{:3.1f}".format(sel.target[1]) ) )
 
 # start the plotting:
-plD = plotData()
 logDir = "./logs"
 for file in os.listdir(logDir):
     if file.endswith(".csv"):
-        plD.plotCSV(os.path.join(logDir, file))
-
+        plD = plotData(os.path.join(logDir, file))
 #ax = plt.gca()
 #bcut = Button(ax, 'YES', color='red', hovercolor='green')
-
-plt.show()
+plt.show()  # send a show command to all figures
