@@ -11,8 +11,6 @@ class CalPlot:
     def __init__(self, ax, fillDays, colors):
         self.fillDays = fillDays
         self.colors = colors
-        print(fillDays)
-        print(colors)
         self.ax = ax
         year = self.fillDays[-1][0]   # take year and month of
         month = self.fillDays[-1][1]  # last provided day
@@ -40,21 +38,16 @@ class CalPlot:
     def fillBox(self, ax, i, j, clr):
         ax.add_patch(
             patches.Rectangle( (i - 0.5, j - 0.5), 1, 1,
-                edgecolor="blue", facecolor=(clr,clr,clr),
+                edgecolor="grey", facecolor=(clr,clr,clr),
                 alpha=0.99, fill=True,
             )
         )
 
     def checkFillDay(self, year, month, day):
-        if (year, month, day) in self.fillDays:
-                return True
-
-    def checkColorDay(self, year, month, day, weekday):
-        if weekday == 6:  # Sunday
-            return "red"
-        if weekday == 5:  # Saturday
-            return "blue"
-        return "black"
+        for i, item in enumerate(self.fillDays, 0):
+            if item == (year, month, day):
+                return self.colors[i]
+        return 1
 
     def checkColorDay(self, year, month, day, weekday):
         if weekday == 6:  # Sunday
@@ -77,9 +70,10 @@ class CalPlot:
         for day in range(1, num_days + 1):
             i = x_start + weekday * x_offset_rate
             fgcolor = self.checkColorDay(year, month, day, weekday)
-            if fill and self.checkFillDay(year, month, day):
-                self.fillBox(ax, i, j, 0)
-
+            if fill:
+                bgcolor = self.checkFillDay(year, month, day)
+                self.fillBox(ax, i, j, bgcolor)
+                if bgcolor < 0.2: fgcolor = "white"
             self.labelDay(ax, day, i, j, fgcolor)
             weekday = (weekday + 1) % 7
             if weekday == 0:
