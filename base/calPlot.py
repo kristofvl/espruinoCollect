@@ -8,11 +8,14 @@ import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 
 class CalPlot:
-    def __init__(self, ax, fillDays):
+    def __init__(self, ax, fillDays, colors):
         self.fillDays = fillDays
+        self.colors = colors
+        print(fillDays)
+        print(colors)
         self.ax = ax
-        year = self.fillDays[-1][0]
-        month = self.fillDays[-1][1]
+        year = self.fillDays[-1][0]   # take year and month of
+        month = self.fillDays[-1][1]  # last provided day
         self.main(year, month, grid=True, fill=True)
         #self.annualCalender(year)
 
@@ -34,17 +37,24 @@ class CalPlot:
     def labelDay(self, ax, day, i, j, cl="black"):
         ax.text(i, j, int(day), ha="center", va="center", color=cl)
 
-    def fillBox(self, ax, i, j):
+    def fillBox(self, ax, i, j, clr):
         ax.add_patch(
             patches.Rectangle( (i - 0.5, j - 0.5), 1, 1,
-                edgecolor="blue", facecolor="yellow",
-                alpha=0.1, fill=True,
+                edgecolor="blue", facecolor=(clr,clr,clr),
+                alpha=0.99, fill=True,
             )
         )
 
-    def checkFillDay(self, year, month, day, weekday):
+    def checkFillDay(self, year, month, day):
         if (year, month, day) in self.fillDays:
                 return True
+
+    def checkColorDay(self, year, month, day, weekday):
+        if weekday == 6:  # Sunday
+            return "red"
+        if weekday == 5:  # Saturday
+            return "blue"
+        return "black"
 
     def checkColorDay(self, year, month, day, weekday):
         if weekday == 6:  # Sunday
@@ -66,10 +76,11 @@ class CalPlot:
         j = y_start
         for day in range(1, num_days + 1):
             i = x_start + weekday * x_offset_rate
-            color = self.checkColorDay(year, month, day, weekday)
-            if fill and self.checkFillDay(year, month, day, weekday):
-                self.fillBox(ax, i, j)
-            self.labelDay(ax, day, i, j, color)
+            fgcolor = self.checkColorDay(year, month, day, weekday)
+            if fill and self.checkFillDay(year, month, day):
+                self.fillBox(ax, i, j, 0)
+
+            self.labelDay(ax, day, i, j, fgcolor)
             weekday = (weekday + 1) % 7
             if weekday == 0:
                 j += y_offset
