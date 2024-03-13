@@ -20,12 +20,12 @@ function pad(n,d) {return ("0".repeat(d)+n).substr(-d);}
 function fPad21(f,s) { // pad a float to ± 2 digits left, 1 right
   return (s?(f<0?'-':'+'):'')+Math.abs(f).toFixed(1).padStart(4,'0');
 }
-function toQuart(d) {  // return time d to quarter of hour
-  return d.getHours()*4+Math.floor(d.getMinutes()/15);
+function toInterval(d) {  // return time d to quarter of hour
+  return d.getHours()*(60/SAMPLE_INT)+Math.floor(d.getMinutes()/SAMPLE_INT);
 }
 
 function measure() {  // fill in current measurements
-  indx = toQuart(new Date());
+  indx = toInterval(new Date());
   data[0][indx] = E.getTemperature()*10;
   if (typeof(Puck) != "undefined") {
      data[1][indx] = Puck.light()*999;
@@ -49,15 +49,16 @@ function measure() {  // fill in current measurements
 }
 
 function prnt(day) {  // print out daily view via serial
-  var d = new Date();
-  var j = 0;
-  if (d>0) d.setDate(d.getDate() - day);  // day is positive
+  var today = new Date();
+  if (today>0) today.setDate(today.getDate() - day);  // day is positive
   headerStr = "Temp;HRProb;HR;Steps;Movement";
-  console.log(" "+d.getFullYear()+"-"+pad(d.getMonth()+1,2)
-                 +"-"+pad(d.getDate(),2)+" "+headerStr);
+  console.log(today.getFullYear()+"-"+pad(today.getMonth()+1,2)
+                 +"-"+pad(today.getDate(),2)+" "+headerStr);
+  var j = 0;
+  var minsPerHour = (60/SAMPLE_INT);
   do {
-    var outstr = " "+pad(Math.floor(j/4),2)+":";
-    for (i=j; i<j+4; i++) {
+    var outstr = pad(Math.floor(j/minsPerHour),2)+":";
+    for (i=j; i<j+minsPerHour; i++) {
       if (day==0) {
         outstr += (i==indx)?"[":" ";
         outstr += fPad21(data[0][i]/10,1)+",";
@@ -76,7 +77,7 @@ function prnt(day) {  // print out daily view via serial
       }
     }
     console.log(outstr);
-    j+=4;
+    j+=minsPerHour;
   } while(j<MAX);
 }
 
@@ -214,7 +215,7 @@ Bangle.setBarometerPower(true);  // set up 1-second altitude readings
 let getAlt = function() {
   Bangle.getPressure().then(d => {alti = d.altitude;}).catch(error => {print("ERROR");});
 };
-setInterval(getAlt, 1000);
+setInterval(getAlt, 60*1000);
 
 draw();  // start drawing the time
 }  // out of Bangle block
