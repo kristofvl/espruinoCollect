@@ -16,12 +16,12 @@ var adata = [ new Int16Array(MAX*MAX_ARX), new Int16Array(MAX*MAX_ARX),
 var itr = 0;
 
 // pad integer n to d digits:
-function pad(n,d) {return ("0".repeat(d)+n).substr(-d);}
+function pad(n,digits) {return ("0".repeat(digits)+n).substr(-digits);}
 function fPad21(f,s) { // pad a float to ± 2 digits left, 1 right
   return (s?(f<0?'-':'+'):'')+Math.abs(f).toFixed(1).padStart(4,'0');
 }
-function toInterval(d) {  // return time d to quarter of hour
-  return d.getHours()*(60/SAMPLE_INT)+Math.floor(d.getMinutes()/SAMPLE_INT);
+function toInterval(dte) {  // return time d to quarter of hour
+  return dte.getHours()*(60/SAMPLE_INT)+Math.floor(dte.getMinutes()/SAMPLE_INT);
 }
 
 function measure() {  // fill in current measurements
@@ -161,6 +161,7 @@ let draw = function() {
   // add minimal banner with steps on top:
   scrWidth = g.getWidth();
   g.setColor(0,0,0).fillRect(0,0,scrWidth,12).setColor(0,1,0);
+  if ( (hourStr=="04") && (minStr=="00") ) Bangle.setStepCount(0);
   steps = Bangle.getStepCount();
   g.fillRect(0,0,Math.floor((steps>10000)?scrWidth:((steps*scrWidth)/10000)),7);
   // Draw minute to offscreen buffer
@@ -211,7 +212,7 @@ let animate = function(isIn, callback) {
   }, 20);
 };
 
-Bangle.setBarometerPower(true);  // set up 1-second altitude readings
+Bangle.setBarometerPower(true);  // set up 1-minute altitude readings
 let getAlt = function() {
   Bangle.getPressure().then(d => {alti = d.altitude;}).catch(error => {print("ERROR");});
 };
