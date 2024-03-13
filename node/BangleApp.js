@@ -1,6 +1,6 @@
-const MAX = 96;  // quarter of hours per day, (1440/15)
 const MAX_ARX = 10;  // local storage for past MAX_ARX days
-const SAMPLE_INT = 10; // minutes
+const SAMPLE_INT = 10; // 5, 10 or 15 minutes
+const MAX = 1440/SAMPLE_INT;  // quarter of hours per day
 const INV = 1000*60*SAMPLE_INT; // sampling interval in ms
 // day's measurements:
 var data = [ new Int16Array(MAX), new Int16Array(MAX),
@@ -61,16 +61,18 @@ function prnt(day) {  // print out daily view via serial
       if (day==0) {
         outstr += (i==indx)?"[":" ";
         outstr += fPad21(data[0][i]/10,1)+",";
-        outstr += fPad21(data[1][i]/10,0);
-        for (k=2; k<5; k++) 
-          outstr += ","+pad(data[k][i],5);
+        outstr += pad(data[1][i],3)+",";
+        outstr += pad(data[2][i],3)+",";
+        outstr += pad(data[3][i],5)+",";
+        outstr += pad(data[4][i],5);
         outstr += (i==indx)?"]":" ";
       } else {
         day_mem = ((itr-day)<0?MAX_ARX+(itr-day):(itr-day))%MAX_ARX;
         outstr += " "+fPad21(adata[0][i+MAX*day_mem]/10,1)+",";
-        outstr += fPad21(adata[1][i+MAX*day_mem]/10,0);
-        for (k=2; k<5; k++) 
-          outstr += ","+pad(adata[k][i+MAX*day_mem],5);
+        outstr += pad(adata[1][i+MAX*day_mem],3)+",";
+        outstr += pad(adata[2][i+MAX*day_mem],3)+",";
+        outstr += pad(adata[3][i+MAX*day_mem],5)+",";
+        outstr += pad(adata[4][i+MAX*day_mem],5)+" ";
       }
     }
     console.log(outstr);
