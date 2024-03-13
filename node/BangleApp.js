@@ -1,7 +1,7 @@
-
 const MAX = 96;  // quarter of hours per day, (1440/15)
 const MAX_ARX = 10;  // local storage for past MAX_ARX days
-const INV = 900000;  // interval = 15 minutes = 1000*60*60*15
+const SAMPLE_INT = 10; // minutes
+const INV = 1000*60*SAMPLE_INT; // sampling interval in ms
 // day's measurements:
 var data = [ new Int16Array(MAX), new Int16Array(MAX),
             new Int16Array(MAX), new Int16Array(MAX),
@@ -15,14 +15,10 @@ var adata = [ new Int16Array(MAX*MAX_ARX), new Int16Array(MAX*MAX_ARX),
             new Int16Array(MAX*MAX_ARX)];
 var itr = 0;
 
-function pad2(n) {  // pad an integer to 2 digits
-  return ('0'+n).substr(-2);
-}
+// pad integer n to d digits:
+function pad(n,d) {return ("0".repeat(d)+n).substr(-d);}
 function fPad21(f,s) { // pad a float to ± 2 digits left, 1 right
   return (s?(f<0?'-':'+'):'')+Math.abs(f).toFixed(1).padStart(4,'0');
-}
-function fPad5(n) { // pad an integer to 5 digits
-  return ('0000'+n).substr(-5);
 }
 function toQuart(d) {  // return time d to quarter of hour
   return d.getHours()*4+Math.floor(d.getMinutes()/15);
@@ -35,6 +31,7 @@ function measure() {  // fill in current measurements
      data[1][indx] = Puck.light()*999;
      data[2][indx] = Puck.getBatteryPercentage();
      data[3][indx] = Puck.capSense();
+     data[4][indx] = 0;
   } else if ((typeof(Bangle) != "undefined")) {
      bhs = Bangle.getHealthStatus('last');
      data[1][indx] = bhs.bpmConfidence;
@@ -48,31 +45,32 @@ function measure() {  // fill in current measurements
              adata[s][i+MAX*itr] = data[s][i];
     itr++;  if (itr==MAX_ARX) itr = 0;
   }
-  NRF.setAdvertising({0x1809 : [Math.round(data[0][indx])] });
+  //NRF.setAdvertising({0x1809 : [Math.round(data[0][indx])] });
 }
 
 function prnt(day) {  // print out daily view via serial
   var d = new Date();
   var j = 0;
   if (d>0) d.setDate(d.getDate() - day);  // day is positive
-  console.log(" "+d.getFullYear()+"-"+pad2(d.getMonth()+1)
-                 +"-"+pad2(d.getDate()));
+  headerStr = "Temp;HRProb;HR;Steps;Movement";
+  console.log(" "+d.getFullYear()+"-"+pad(d.getMonth()+1,2)
+                 +"-"+pad(d.getDate(),2)+" "+headerStr);
   do {
-    var outstr = " "+pad2(Math.floor(j/4))+":";
+    var outstr = " "+pad(Math.floor(j/4),2)+":";
     for (i=j; i<j+4; i++) {
       if (day==0) {
         outstr += (i==indx)?"[":" ";
         outstr += fPad21(data[0][i]/10,1)+",";
         outstr += fPad21(data[1][i]/10,0);
         for (k=2; k<5; k++) 
-          outstr += ","+fPad5(data[k][i]);
+          outstr += ","+pad(data[k][i],5);
         outstr += (i==indx)?"]":" ";
       } else {
         day_mem = ((itr-day)<0?MAX_ARX+(itr-day):(itr-day))%MAX_ARX;
         outstr += " "+fPad21(adata[0][i+MAX*day_mem]/10,1)+",";
         outstr += fPad21(adata[1][i+MAX*day_mem]/10,0);
         for (k=2; k<5; k++) 
-          outstr += ","+fPad5(adata[k][i+MAX*day_mem]);
+          outstr += ","+pad(adata[k][i+MAX*day_mem],5);
       }
     }
     console.log(outstr);
@@ -115,10 +113,10 @@ let g2img = {
   width:g2.getWidth(), height:g2.getHeight(), bpp:1,
   buffer:g2.buffer, transparent:0
 };
-const slope = 20;
-const offsy = 20; // offset of numbers from middle
+const slope = 25;
+const offsy = 25; // offset of numbers from middle
 const fontBorder = 4; // offset from left/right
-const slopeBorder = 10, slopeBorderUpper = 4; // fudge-factor to move minutes down from slope
+const slopeBorder = 2, slopeBorderUpper = 1; // fudge-factor to move minutes down from slope
   
 let R,x,y; // middle of the clock face
 let dateStr = "";
@@ -149,8 +147,8 @@ let draw = function() {
   battery = E.getBattery();
   g.setFont("7x11Numeric7Seg").setColor(0,0,0).fillRect(145,17,170,30).fillRect(145,37,170,50);
   heart = Bangle.getHealthStatus().bpm;
-  g.setColor(1,1,1).drawString(("00"+battery).substr(-3)+"%", 147, 19);
-  g.drawString(("00"+heart).substr(-3), 147, 39);
+  g.setColor(1,1,1).drawString(pad(battery,3)+"%", 147, 19);
+  g.drawString(pad(heart,3), 147, 39);
   // Draw hour
   g.setFontAlign(-1, 0).setFont("PaytoneOne").setColor("#00f");
   g.drawString(hourStr, fontBorder, y-offsy).setFont("4x6"); // draw and unload custom font
@@ -199,8 +197,8 @@ let animate = function(isIn, callback) {
       animInterval=undefined;
       if (isAnimIn) {
         // draw height:
-        g.setFont("7x11Numeric7Seg").setColor(0,0,0).fillRect(5,129,30,143);
-        g.setColor(1,1,1).drawString(("00"+alti).substr(-3), 7, 136);
+        g.setFont("7x11Numeric7Seg").setColor(0,0,0).fillRect(5,129,38,143);
+        g.setColor(1,1,1).drawString(pad(Math.round(alti),4), 7, 136); 
         // draw the date
         g.setColor(0,0,0).fillRect(0,g.getHeight()-30,g.getWidth(),g.getHeight());
         g.setColor(g.theme.bg).setFontAlign(0, 0).setFont("6x15",2).drawString(dateStr, R.x + R.w/2, R.y+R.h-9);
@@ -210,11 +208,11 @@ let animate = function(isIn, callback) {
   }, 20);
 };
 
-Bangle.setBarometerPower(true);  // set up 1minute-altitude readings
+Bangle.setBarometerPower(true);  // set up 1-second altitude readings
 let getAlt = function() {
   Bangle.getPressure().then(d => {alti = d.altitude;}).catch(error => {print("ERROR");});
 };
-setInterval(getAlt, 60 * 1000);
+setInterval(getAlt, 1000);
 
 draw();  // start drawing the time
 }  // out of Bangle block
